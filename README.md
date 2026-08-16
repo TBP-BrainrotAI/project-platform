@@ -1,24 +1,74 @@
 # 🧠 BrainRotAI
 
-BrainRotAI é um orquestrador local de inteligência artificial que planeja, divide tarefas e executa múltiplos agentes em paralelo para resolver problemas complexos e gerar código.
+> Orquestrador de Inteligências Artificiais com múltiplos agentes, execução paralela, integração com CLIs e validação de código.
 
-O sistema conta com um **Sandbox Híbrido** que extrai blocos de código gerados pelos agentes e os testa automaticamente antes que a IA chefe sintetize a resposta final.
+---
 
-## ⚙️ Arquitetura
-* **👑 IA Chefe:** Qwen 2.5 (rodando localmente via Ollama). Responsável pelo planejamento e síntese.
-* **🤖 Agentes de Execução:**
-  * **Qwen:** Raciocínio geral e programação.
-  * **Codex CLI:** Especialista na geração de scripts e debugging.
-  * **Gemini CLI:** Revisão técnica e algoritmos complexos.
+## 📌 Sobre o projeto
 
-## 🚀 Pré-requisitos
-Para rodar este projeto na sua máquina, você vai precisar de:
-1. **Python 3** instalado.
-2. **Ollama** instalado e rodando com o modelo Qwen (`ollama run qwen2.5`).
-3. **Gemini CLI** e **Codex CLI** configurados nas variáveis de ambiente do Windows (comandos `gemini.cmd` e `codex.cmd` devem estar acessíveis no terminal).
+O **BrainRotAI** é uma aplicação experimental de orquestração de Inteligências Artificiais.
 
-## 🛠️ Instalação e Execução
+A proposta é utilizar uma IA local como **IA chefe**, responsável por analisar uma solicitação e decidir quais agentes especializados devem participar da resolução.
 
-1. Clone este repositório:
-   ```bash
-   git clone [https://github.com/TBP-BrainrotAI/project-platform.git](https://github.com/TBP-BrainrotAI/project-platform.git)
+Dependendo da tarefa, o sistema pode utilizar diferentes agentes, como:
+
+- 🧠 Qwen
+- 🦙 Llama
+- 💎 Gemini CLI
+- 🤖 OpenAI Codex CLI
+
+Os agentes podem trabalhar simultaneamente e seus resultados são posteriormente analisados pela IA chefe.
+
+O projeto também possui um **Sandbox** para validação de códigos gerados pelos agentes.
+
+---
+
+# 🏗️ Arquitetura
+
+A arquitetura atual do BrainRotAI pode ser representada da seguinte forma:
+
+```text
+                         ┌──────────────────────┐
+                         │       USUÁRIO        │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │     BrainRotAI       │
+                         │      Interface       │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │      IA CHEFE        │
+                         │   Qwen / Llama       │
+                         └──────────┬───────────┘
+                                    │
+                            cria o plano
+                                    │
+              ┌─────────────────────┼─────────────────────┐
+              │                     │                     │
+              ▼                     ▼                     ▼
+        ┌───────────┐        ┌───────────┐        ┌───────────┐
+        │   Qwen    │        │  Gemini   │        │   Codex   │
+        │   Local   │        │    CLI    │        │    CLI    │
+        └─────┬─────┘        └─────┬─────┘        └─────┬─────┘
+              │                    │                    │
+              └────────────────────┼────────────────────┘
+                                   │
+                                   ▼
+                         ┌──────────────────────┐
+                         │       SANDBOX        │
+                         │ Validação de código  │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │      IA CHEFE        │
+                         │      Síntese          │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │    RESPOSTA FINAL    │
+                         └──────────────────────┘

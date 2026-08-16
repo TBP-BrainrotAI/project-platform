@@ -7,22 +7,35 @@ from core.sandbox import Sandbox
 
 class Orchestrator:
 
-    def __init__(self, chefe, agentes, on_event=None):
+    def __init__(
+        self,
+        chefe,
+        agentes,
+        on_event=None,
+        modo="Auto (Sandbox Híbrido)"
+    ):
         self.chefe = chefe
         self.agentes = agentes
+        self.modo = modo
         self.sandbox = Sandbox()
-        self.on_event = on_event or (lambda tipo, dados: None)
+
+        self.on_event = (
+            on_event
+            or (lambda tipo, dados: None)
+        )
 
     # ==========================================
-    # EVENTOS (para a interface gráfica acompanhar
-    # o processamento em tempo real, sem afetar
-    # quem usa o orquestrador só pelo terminal)
+    # EVENTOS
     # ==========================================
 
     def _emit(self, tipo, dados):
 
         try:
-            self.on_event(tipo, dados)
+            self.on_event(
+                tipo,
+                dados
+            )
+
         except Exception:
             pass
 
@@ -37,12 +50,15 @@ Você é o ORQUESTRADOR PRINCIPAL do BrainRotAI.
 
 Você NÃO deve resolver o problema.
 Sua função é decidir quais agentes devem trabalhar
-na solicitação, aplicando regras OBJETIVAS abaixo.
+na solicitação.
 
 PEDIDO DO USUÁRIO:
+
 {pergunta}
 
-AGENTES DISPONÍVEIS:
+========================================
+AGENTES DISPONÍVEIS
+========================================
 
 qwen:
 IA local através do Ollama.
@@ -56,58 +72,147 @@ codex:
 OpenAI Codex CLI.
 Especialista em código, debugging e implementação.
 
-CRITÉRIOS OBJETIVOS (marque mentalmente cada um que se aplica
-ao pedido do usuário):
+========================================
+CRITÉRIOS
+========================================
 
-[ ] Pede apenas 1 função simples, sem validação de regras externas
-    (ex: soma, média, conversão de unidade, string simples)
-[ ] Envolve validação de dados com regras específicas
-    (ex: CPF, CNPJ, e-mail, senha, cartão de crédito)
-[ ] Envolve cálculo com múltiplas etapas ou algoritmo com mais
-    de uma verificação encadeada (ex: dígitos verificadores,
-    checksum, criptografia, parsing, recursão)
-[ ] Pede para encontrar ou corrigir um bug em código existente
-[ ] Pede comparação entre abordagens, arquiteturas ou tecnologias
-[ ] É uma pergunta conceitual, sem pedir código
+Analise mentalmente se o pedido:
 
-REGRAS DE SELEÇÃO (aplique a PRIMEIRA regra que combinar,
-na ordem abaixo):
+1. É uma pergunta conceitual sem código.
 
-1. Se marcou "pergunta conceitual, sem código":
-   use ["qwen"]
+2. Pede apenas uma função simples.
 
-2. Se marcou "1 função simples" E NENHUM outro item:
-   use ["codex", "qwen"]
+3. Envolve validação de dados com regras específicas.
 
-3. Se marcou "validação de dados com regras específicas",
-   OU "múltiplas etapas/algoritmo encadeado",
-   OU "encontrar/corrigir bug":
-   use ["codex", "qwen", "gemini"]
+4. Envolve cálculo com múltiplas etapas ou algoritmo
+   com várias verificações.
 
-4. Se marcou "comparação entre abordagens":
-   use ["qwen", "gemini"]
+5. Pede para encontrar ou corrigir um bug.
 
-5. Se nenhuma regra acima combinar claramente:
-   use ["codex", "qwen"]
+6. Pede comparação entre abordagens,
+   arquiteturas ou tecnologias.
 
-REGRAS GERAIS:
+7. Pede implementação de código.
+
+8. Pede código que pode ser executado/testado.
+
+========================================
+REGRAS DE SELEÇÃO
+========================================
+
+REGRA 1:
+
+Se for uma pergunta conceitual sem código:
+
+use:
+
+["qwen"]
+
+REGRA 2:
+
+Se for uma função simples:
+
+use preferencialmente:
+
+["codex"]
+
+Não adicione outros agentes sem necessidade.
+
+REGRA 3:
+
+Se envolver implementação de código relevante:
+
+use:
+
+["codex", "qwen"]
+
+REGRA 4:
+
+Se envolver debugging, validação complexa,
+algoritmo complexo ou necessidade de revisão técnica:
+
+use:
+
+["codex", "qwen", "gemini"]
+
+REGRA 5:
+
+Se for comparação entre abordagens:
+
+use:
+
+["qwen", "gemini"]
+
+REGRA 6:
+
+Se nenhuma regra se aplicar claramente:
+
+use:
+
+["qwen"]
+
+========================================
+REGRAS DO SANDBOX
+========================================
+
+Também decida se o Sandbox é realmente necessário.
+
+"sandbox": true SOMENTE quando:
+
+- houver código executável;
+- houver implementação que realmente precise ser testada;
+- houver debugging;
+- houver algoritmo cuja execução ajude a validar a solução;
+- houver uma razão concreta para executar o código.
+
+"sandbox": false quando:
+
+- for pergunta conceitual;
+- for explicação;
+- for comparação;
+- não houver código executável;
+- o código for trivial e não houver benefício relevante
+  em executá-lo;
+- executar o código não acrescentar informação útil.
+
+IMPORTANTE:
+
+Não use Sandbox apenas porque existe código.
+
+O objetivo é ECONOMIZAR processamento.
+
+========================================
+REGRAS GERAIS
+========================================
 
 - Nunca escolha mais de 3 agentes.
-- Codex é sempre prioritário quando há geração de código.
-- Gemini deve ser incluído sempre que a regra 3 ou 4 se aplicar.
-- A IA chefe é responsável pela síntese final.
+- Codex é prioritário para implementação de código.
+- Gemini só deve ser usado quando realmente agregar valor.
+- Qwen pode funcionar como analista e sintetizador.
+- Não escolha agentes desnecessariamente.
+- O Sandbox deve ser usado somente quando necessário.
+- A IA chefe será responsável pela síntese final.
 
-RESPONDA SOMENTE COM JSON VÁLIDO, sem explicações fora do JSON.
+========================================
+FORMATO DA RESPOSTA
+========================================
 
-Formato obrigatório:
+Responda SOMENTE com JSON válido.
+
+Não escreva explicações fora do JSON.
+
+Formato:
 
 {{
-    "agentes": ["qwen", "codex"],
-    "motivo": "A solicitação envolve programação e precisa de implementação e análise."
+    "agentes": ["codex", "qwen"],
+    "motivo": "A solicitação envolve implementação e análise.",
+    "sandbox": true
 }}
 """
 
-        resposta = self.chefe.ask(prompt)
+        resposta = self.chefe.ask(
+            prompt
+        )
 
         try:
 
@@ -118,14 +223,34 @@ Formato obrigatório:
             )
 
             if not match:
+
                 raise ValueError(
-                    "Nenhum JSON encontrado na resposta da IA chefe."
+                    "Nenhum JSON encontrado "
+                    "na resposta da IA chefe."
                 )
 
-            plano = json.loads(match.group(0))
+            plano = json.loads(
+                match.group(0)
+            )
 
-            agentes = plano.get("agentes", [])
-            motivo = plano.get("motivo", "")
+            agentes = plano.get(
+                "agentes",
+                []
+            )
+
+            motivo = plano.get(
+                "motivo",
+                ""
+            )
+
+            usar_sandbox = plano.get(
+                "sandbox",
+                False
+            )
+
+            # --------------------------------------
+            # VALIDAR AGENTES
+            # --------------------------------------
 
             agentes_validos = [
                 nome
@@ -135,36 +260,58 @@ Formato obrigatório:
 
             agentes_validos = agentes_validos[:3]
 
+            # --------------------------------------
+            # FALLBACK
+            # --------------------------------------
+
             if not agentes_validos:
 
                 agentes_validos = ["qwen"]
 
                 motivo = (
-                    "Não foi possível identificar os agentes "
-                    "necessários. Usando Qwen como fallback."
+                    "Não foi possível identificar "
+                    "os agentes necessários. "
+                    "Usando Qwen como fallback."
                 )
+
+                usar_sandbox = False
+
+            # --------------------------------------
+            # SANDBOX SÓ PODE SER USADO NO AUTO
+            # --------------------------------------
+
+            if self.modo != "Auto (Sandbox Híbrido)":
+
+                usar_sandbox = False
 
             return {
                 "agentes": agentes_validos,
-                "motivo": motivo
+                "motivo": motivo,
+                "sandbox": usar_sandbox
             }
 
         except Exception as e:
 
             print(
-                f"[ORQUESTRADOR] Falha ao interpretar plano: {e}"
+                "[ORQUESTRADOR] "
+                f"Falha ao interpretar plano: {e}"
             )
 
             return {
                 "agentes": ["qwen"],
-                "motivo": "Fallback automático."
+                "motivo": "Fallback automático.",
+                "sandbox": False
             }
 
     # ==========================================
     # EXECUÇÃO PARALELA DOS AGENTES
     # ==========================================
 
-    def executar_agentes(self, pergunta, nomes):
+    def executar_agentes(
+        self,
+        pergunta,
+        nomes
+    ):
 
         resultados = {}
 
@@ -175,6 +322,7 @@ Formato obrigatório:
         ]
 
         if not selecionados:
+
             return resultados
 
         print(
@@ -191,12 +339,15 @@ Formato obrigatório:
             for agente in selecionados:
 
                 print(
-                    f"   → Iniciando: {agente.name}"
+                    f"   → Iniciando: "
+                    f"{agente.name}"
                 )
 
                 self._emit(
                     "agente_iniciado",
-                    {"nome": agente.name}
+                    {
+                        "nome": agente.name
+                    }
                 )
 
                 futuro = executor.submit(
@@ -206,21 +357,29 @@ Formato obrigatório:
 
                 futuros[futuro] = agente.name
 
-            for futuro in concurrent.futures.as_completed(futuros):
+            for futuro in concurrent.futures.as_completed(
+                futuros
+            ):
 
                 nome = futuros[futuro]
 
                 try:
 
-                    resultados[nome] = futuro.result()
+                    resultados[nome] = (
+                        futuro.result()
+                    )
 
                     print(
-                        f"   ✓ Finalizado: {nome}"
+                        f"   ✓ Finalizado: "
+                        f"{nome}"
                     )
 
                     self._emit(
                         "agente_finalizado",
-                        {"nome": nome, "sucesso": True}
+                        {
+                            "nome": nome,
+                            "sucesso": True
+                        }
                     )
 
                 except Exception as e:
@@ -235,7 +394,10 @@ Formato obrigatório:
 
                     self._emit(
                         "agente_finalizado",
-                        {"nome": nome, "sucesso": False}
+                        {
+                            "nome": nome,
+                            "sucesso": False
+                        }
                     )
 
         return resultados
@@ -244,7 +406,10 @@ Formato obrigatório:
     # EXTRAÇÃO DE CÓDIGO
     # ==========================================
 
-    def extrair_codigos(self, resultados):
+    def extrair_codigos(
+        self,
+        resultados
+    ):
 
         codigos = []
 
@@ -259,17 +424,22 @@ Formato obrigatório:
                 re.DOTALL | re.IGNORECASE
             )
 
-            for indice, codigo in enumerate(blocos, start=1):
+            for indice, codigo in enumerate(
+                blocos,
+                start=1
+            ):
 
                 codigo = codigo.strip()
 
                 if codigo:
 
-                    codigos.append({
-                        "agente": nome,
-                        "indice": indice,
-                        "codigo": codigo
-                    })
+                    codigos.append(
+                        {
+                            "agente": nome,
+                            "indice": indice,
+                            "codigo": codigo
+                        }
+                    )
 
         return codigos
 
@@ -277,21 +447,28 @@ Formato obrigatório:
     # TESTE DOS CÓDIGOS NO SANDBOX
     # ==========================================
 
-    def testar_codigos(self, resultados):
+    def testar_codigos(
+        self,
+        resultados
+    ):
 
-        codigos = self.extrair_codigos(resultados)
+        codigos = self.extrair_codigos(
+            resultados
+        )
 
         if not codigos:
 
             print(
-                "\n🧪 SANDBOX: Nenhum código encontrado."
+                "\n🧪 SANDBOX: "
+                "Nenhum código encontrado."
             )
 
             return []
 
         print(
             f"\n🧪 SANDBOX: "
-            f"{len(codigos)} bloco(s) de código encontrado(s)."
+            f"{len(codigos)} bloco(s) "
+            f"de código encontrado(s)."
         )
 
         resultados_sandbox = []
@@ -339,13 +516,15 @@ Formato obrigatório:
                         f"{item['agente']} apresentou erro."
                     )
 
-                resultados_sandbox.append({
-                    "agente": item["agente"],
-                    "indice": item["indice"],
-                    "sucesso": sucesso,
-                    "stdout": stdout,
-                    "erro": erro
-                })
+                resultados_sandbox.append(
+                    {
+                        "agente": item["agente"],
+                        "indice": item["indice"],
+                        "sucesso": sucesso,
+                        "stdout": stdout,
+                        "erro": erro
+                    }
+                )
 
                 self._emit(
                     "sandbox_resultado",
@@ -361,16 +540,19 @@ Formato obrigatório:
             except Exception as e:
 
                 print(
-                    f"   ✗ Falha ao executar Sandbox: {e}"
+                    f"   ✗ Falha ao executar Sandbox: "
+                    f"{e}"
                 )
 
-                resultados_sandbox.append({
-                    "agente": item["agente"],
-                    "indice": item["indice"],
-                    "sucesso": False,
-                    "stdout": "",
-                    "erro": str(e)
-                })
+                resultados_sandbox.append(
+                    {
+                        "agente": item["agente"],
+                        "indice": item["indice"],
+                        "sucesso": False,
+                        "stdout": "",
+                        "erro": str(e)
+                    }
+                )
 
                 self._emit(
                     "sandbox_resultado",
@@ -386,14 +568,20 @@ Formato obrigatório:
         return resultados_sandbox
 
     # ==========================================
-    # FORMATAR RESULTADOS DO SANDBOX
+    # FORMATAR SANDBOX
     # ==========================================
 
-    def formatar_sandbox(self, resultados_sandbox):
+    def formatar_sandbox(
+        self,
+        resultados_sandbox
+    ):
 
         if not resultados_sandbox:
 
-            return "Nenhum código foi executado no Sandbox."
+            return (
+                "Nenhum código foi "
+                "executado no Sandbox."
+            )
 
         partes = []
 
@@ -406,16 +594,25 @@ Formato obrigatório:
             )
 
             texto = (
-                f"Agente: {resultado['agente']}\n"
-                f"Bloco: {resultado['indice']}\n"
-                f"Status: {status}\n"
-                f"Saída:\n{resultado['stdout']}\n"
-                f"Erro:\n{resultado['erro']}"
+                f"Agente: "
+                f"{resultado['agente']}\n"
+                f"Bloco: "
+                f"{resultado['indice']}\n"
+                f"Status: "
+                f"{status}\n"
+                f"Saída:\n"
+                f"{resultado['stdout']}\n"
+                f"Erro:\n"
+                f"{resultado['erro']}"
             )
 
-            partes.append(texto)
+            partes.append(
+                texto
+            )
 
-        return "\n\n".join(partes)
+        return "\n\n".join(
+            partes
+        )
 
     # ==========================================
     # SÍNTESE FINAL
@@ -431,21 +628,28 @@ Formato obrigatório:
         relatorios = "\n\n".join(
             f"### RELATÓRIO DO AGENTE: {nome}\n"
             f"{resposta}"
-            for nome, resposta in resultados.items()
+            for nome, resposta
+            in resultados.items()
         )
 
-        sandbox_texto = self.formatar_sandbox(
-            resultados_sandbox
+        sandbox_texto = (
+            self.formatar_sandbox(
+                resultados_sandbox
+            )
         )
 
         prompt = f"""
 Você é a IA CHEFE do BrainRotAI.
 
-Você recebeu uma solicitação do usuário,
-relatórios de outros agentes e resultados
-de execução no Sandbox.
+Você recebeu:
 
-PEDIDO ORIGINAL:
+1. A solicitação original do usuário.
+2. Relatórios dos agentes selecionados.
+3. Resultados do Sandbox, quando houver.
+
+========================================
+PEDIDO ORIGINAL
+========================================
 
 {pergunta}
 
@@ -466,7 +670,8 @@ SUA FUNÇÃO
 ========================================
 
 Analise criticamente todas as informações
-e produza uma única resposta final de alta qualidade.
+e produza uma única resposta final de
+alta qualidade.
 
 REGRAS:
 
@@ -478,7 +683,7 @@ REGRAS:
 - Não entregue código que você sabe que falhou.
 - Se necessário, explique o erro encontrado.
 - Não mencione os agentes desnecessariamente.
-- Não diga que você "consultou outras IAs".
+- Não diga que você consultou outras IAs.
 - Não invente informações.
 - Preserve código correto.
 - Se houver código, entregue código funcional.
@@ -486,22 +691,37 @@ REGRAS:
 
 IMPORTANTE:
 
-O resultado do Sandbox tem prioridade sobre
-uma afirmação de que determinado código funciona.
+Quando houver resultado do Sandbox,
+ele tem prioridade sobre uma afirmação
+de que determinado código funciona.
 """
 
-        return self.chefe.ask(prompt)
+        return self.chefe.ask(
+            prompt
+        )
 
     # ==========================================
     # EXECUÇÃO COMPLETA
     # ==========================================
 
-    def executar(self, pergunta):
+    def executar(
+        self,
+        pergunta
+    ):
 
         print()
-        print("=" * 60)
-        print("🧠 BRAINROTAI — ORQUESTRAÇÃO")
-        print("=" * 60)
+
+        print(
+            "=" * 60
+        )
+
+        print(
+            "🧠 BRAINROTAI — ORQUESTRAÇÃO"
+        )
+
+        print(
+            "=" * 60
+        )
 
         # ==========================================
         # IA CHEFE
@@ -510,6 +730,11 @@ uma afirmação de que determinado código funciona.
         print(
             f"\n👑 IA CHEFE: "
             f"{self.chefe.name}"
+        )
+
+        print(
+            f"⚙️ MODO: "
+            f"{self.modo}"
         )
 
         # ==========================================
@@ -538,11 +763,17 @@ uma afirmação de que determinado código funciona.
             f"{plano['motivo']}"
         )
 
+        print(
+            "Sandbox: "
+            f"{'SIM' if plano['sandbox'] else 'NÃO'}"
+        )
+
         self._emit(
             "plano_pronto",
             {
                 "agentes": plano["agentes"],
-                "motivo": plano["motivo"]
+                "motivo": plano["motivo"],
+                "sandbox": plano["sandbox"]
             }
         )
 
@@ -567,13 +798,18 @@ uma afirmação de que determinado código funciona.
 
         for nome, resultado in resultados.items():
 
-            print("=" * 60)
-
             print(
-                f"🔹 RELATÓRIO: {nome}"
+                "=" * 60
             )
 
-            print("=" * 60)
+            print(
+                f"🔹 RELATÓRIO: "
+                f"{nome}"
+            )
+
+            print(
+                "=" * 60
+            )
 
             print(
                 resultado
@@ -583,9 +819,36 @@ uma afirmação de que determinado código funciona.
         # SANDBOX
         # ==========================================
 
-        resultados_sandbox = self.testar_codigos(
-            resultados
+        resultados_sandbox = []
+
+        usar_sandbox = (
+            self.modo
+            == "Auto (Sandbox Híbrido)"
+            and plano.get(
+                "sandbox",
+                False
+            )
         )
+
+        if usar_sandbox:
+
+            print(
+                "\n🧪 SANDBOX: "
+                "Validação necessária."
+            )
+
+            resultados_sandbox = (
+                self.testar_codigos(
+                    resultados
+                )
+            )
+
+        else:
+
+            print(
+                "\n🧪 SANDBOX: "
+                "Não necessário para esta tarefa."
+            )
 
         # ==========================================
         # RESULTADOS DO SANDBOX
@@ -594,9 +857,18 @@ uma afirmação de que determinado código funciona.
         if resultados_sandbox:
 
             print()
-            print("=" * 60)
-            print("🧪 RESULTADOS DO SANDBOX")
-            print("=" * 60)
+
+            print(
+                "=" * 60
+            )
+
+            print(
+                "🧪 RESULTADOS DO SANDBOX"
+            )
+
+            print(
+                "=" * 60
+            )
 
             for resultado in resultados_sandbox:
 
@@ -609,7 +881,8 @@ uma afirmação de que determinado código funciona.
                 print(
                     f"\n{status} | "
                     f"{resultado['agente']} | "
-                    f"Bloco {resultado['indice']}"
+                    f"Bloco "
+                    f"{resultado['indice']}"
                 )
 
                 if resultado["stdout"]:
@@ -632,10 +905,18 @@ uma afirmação de que determinado código funciona.
 
         print(
             "\n🧠 IA CHEFE SINTETIZANDO "
-            "OS RELATÓRIOS E TESTES..."
+            "OS RELATÓRIOS"
+            + (
+                " E TESTES..."
+                if resultados_sandbox
+                else "..."
+            )
         )
 
-        self._emit("sintese_iniciada", {})
+        self._emit(
+            "sintese_iniciada",
+            {}
+        )
 
         resposta_final = self.sintetizar(
             pergunta,
@@ -648,9 +929,18 @@ uma afirmação de que determinado código funciona.
         # ==========================================
 
         print()
-        print("=" * 60)
-        print("🤖 RESPOSTA FINAL")
-        print("=" * 60)
+
+        print(
+            "=" * 60
+        )
+
+        print(
+            "🤖 RESPOSTA FINAL"
+        )
+
+        print(
+            "=" * 60
+        )
 
         print(
             resposta_final
@@ -660,7 +950,9 @@ uma afirmação de que determinado código funciona.
 
         self._emit(
             "resposta_final",
-            {"resposta": resposta_final}
+            {
+                "resposta": resposta_final
+            }
         )
 
         return resposta_final
