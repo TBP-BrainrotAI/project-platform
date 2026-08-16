@@ -1,6 +1,6 @@
 # 🧠 BrainRotAI
 
-> Orquestrador de Inteligências Artificiais com múltiplos agentes, execução paralela, integração com CLIs e validação de código.
+> Orquestrador de Inteligências Artificiais com múltiplos agentes, execução paralela, integração com CLIs, múltiplas contas do Codex e validação automática de código.
 
 ---
 
@@ -8,24 +8,26 @@
 
 O **BrainRotAI** é uma aplicação experimental de orquestração de Inteligências Artificiais.
 
-A proposta é utilizar uma IA local como **IA chefe**, responsável por analisar uma solicitação e decidir quais agentes especializados devem participar da resolução.
+A proposta é utilizar uma IA local como **IA chefe**, responsável por analisar uma solicitação, definir quais agentes devem participar da tarefa e, posteriormente, sintetizar os resultados obtidos.
 
-Dependendo da tarefa, o sistema pode utilizar diferentes agentes, como:
+Dependendo da tarefa, o sistema pode utilizar diferentes agentes:
 
 - 🧠 Qwen
 - 🦙 Llama
 - 💎 Gemini CLI
 - 🤖 OpenAI Codex CLI
 
-Os agentes podem trabalhar simultaneamente e seus resultados são posteriormente analisados pela IA chefe.
+Os agentes podem trabalhar simultaneamente, permitindo que diferentes modelos analisem a mesma solicitação.
 
-O projeto também possui um **Sandbox** para validação de códigos gerados pelos agentes.
+Após a execução, a **IA chefe** analisa os resultados e produz uma única resposta final.
+
+O projeto também possui um **Sandbox** para testar códigos gerados pelos agentes quando a validação for considerada necessária.
 
 ---
 
 # 🏗️ Arquitetura
 
-A arquitetura atual do BrainRotAI pode ser representada da seguinte forma:
+A arquitetura atual do BrainRotAI funciona da seguinte forma:
 
 ```text
                          ┌──────────────────────┐
@@ -44,7 +46,7 @@ A arquitetura atual do BrainRotAI pode ser representada da seguinte forma:
                          │   Qwen / Llama       │
                          └──────────┬───────────┘
                                     │
-                            cria o plano
+                              cria o plano
                                     │
               ┌─────────────────────┼─────────────────────┐
               │                     │                     │
@@ -54,6 +56,10 @@ A arquitetura atual do BrainRotAI pode ser representada da seguinte forma:
         │   Local   │        │    CLI    │        │    CLI    │
         └─────┬─────┘        └─────┬─────┘        └─────┬─────┘
               │                    │                    │
+              │                    │             ┌──────┴──────┐
+              │                    │             │             │
+              │                    │          Conta 1      Conta 2
+              │                    │
               └────────────────────┼────────────────────┘
                                    │
                                    ▼
